@@ -1,38 +1,41 @@
 <template>
     <div class="max-w-lg mx-auto p-6 bg-gray-800 text-white rounded-lg shadow-lg">
-      <h1 class="text-2xl font-semibold mb-4">Audio Player</h1>
-      
-      <div class="mb-6">
-        <div class="w-full h-4 bg-gray-700 rounded-full overflow-hidden" 
-            ref="progress"
-            @click="seek($event)">
-          <div
-            class="h-full bg-blue-500 transition-all"
-            :style="{ width: progress + '%' }"
-          ></div>
+      <div class="play-box bg-gray-800 position-sticky pt-2 pb-1">
+        <h1 class="mb-0 text-2xl font-semibold mb-4">{{ playlist.name || 'Audio Player'}}</h1>
+        <div class="mb-2 flex justify-between">
+          <div class="grow text-left"><small>{{ currentTrack ? currentTrack.name : ''}}</small></div>
+          <div><small v-if="currentTime != '-'">{{ currentTime }} / </small> <small>{{ duration }}</small></div>
         </div>
-        <p class="text-sm mt-2">{{ currentTime }} / {{ duration }}</p>
-      </div>
-      
-      <div class="flex justify-center space-x-4 mb-6">
-        <button
-          @click="prevTrack"
-          class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded"
-        ><img width="24" src="/assets/prev.svg"></button>
-        <button
-          @click="togglePlayPause"
-          class="px-4 py-2 bg-green-600 hover:bg-green-700 rounded"
-        >
-        <img v-if="isPlaying" width="24" src="/assets/pause.svg">
-        <img v-else width="24" src="/assets/play.svg"></button>
-        <button
-          @click="nextTrack"
-          class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded"
-        ><img width="24" src="/assets/next.svg"></button>
-        <button
-          @click="dialog=true"
-          class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded"
-        >Open</button>
+        <div class="mb-2">
+          <div class="w-full h-4 bg-gray-700 rounded-full overflow-hidden" 
+              ref="progress"
+              @click="seek($event)">
+            <div
+              class="h-full bg-blue-500 transition-all"
+              :style="{ width: progress + '%' }"
+            ></div>
+          </div>
+        </div>
+        <div class="flex justify-center space-x-4 mb-6">
+          <button
+            @click="prevTrack"
+            class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded"
+          ><img width="24" src="/assets/prev.svg"></button>
+          <button
+            @click="togglePlayPause"
+            class="px-4 py-2 bg-green-600 hover:bg-green-700 rounded"
+          >
+          <img v-if="isPlaying" width="24" src="/assets/pause.svg">
+          <img v-else width="24" src="/assets/play.svg"></button>
+          <button
+            @click="nextTrack"
+            class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded"
+          ><img width="24" src="/assets/next.svg"></button>
+          <button
+            @click="dialog=true"
+            class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded"
+          >Open</button>
+        </div>
       </div>
   
       <ul class="space-y-2">
@@ -177,7 +180,7 @@
         console.log(audio.currentTime)
       },
       nextTrack() {
-        if (this.currentTrackIndex < this.playlist.length - 1) {
+        if (this.currentTrackIndex < this.playlist.items.length - 1) {
           this.currentTrackIndex++;
           this.isPlaying = false;
           this.playTrack();
@@ -205,6 +208,9 @@
             this.currentTrack.duration = this.$refs.audio.duration
             localStorage.setItem('playlist',JSON.stringify(this.playlist))
             localStorage.setItem('playlists',JSON.stringify(this.playlists))
+        }
+        this.$refs.audio.ontimeupdate = (e) => {
+          console.log('Timeupdate',this.currentTrack.name)
         }
         this.$refs.audio.onended = (e) => {
           this.nextTrack()
