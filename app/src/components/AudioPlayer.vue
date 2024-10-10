@@ -1,6 +1,6 @@
 <template>
     <div class="max-w-lg mx-auto p-6 bg-gray-800 text-white rounded-lg shadow-lg">
-      <div class="play-box bg-gray-800 position-sticky pt-2 pb-1">
+      <div class="play-box bg-gray-800 sticky top-0 pt-2 pb-1">
         <h1 class="mb-0 text-2xl font-semibold mb-4">{{ playlist.name || 'Audio Player'}}</h1>
         <div class="mb-2 flex justify-between">
           <div class="grow text-left"><small>{{ currentTrack ? currentTrack.name : ''}}</small></div>
