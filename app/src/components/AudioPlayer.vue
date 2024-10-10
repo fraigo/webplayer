@@ -37,14 +37,27 @@
   
       <ul class="space-y-2">
         <li
-          v-for="(track, index) in playlist"
+          v-for="(track, index) in playlist.items"
           :key="index"
           :active="currentTrackIndex === index"
           @click="selectTrack(index)"
-          class="p-3 rounded cursor-pointer hover:bg-gray-600"
+          class="p-3 rounded cursor-pointer border-white hover:border"
           :class="[ currentTrackIndex === index ? 'bg-blue-600' : 'bg-gray-700']"
         >
           {{ track.name }} ({{ formatTime(track.duration) }})
+        </li>
+      </ul>
+      <p v-if="Object.keys(playlists).length" class="my-2">Playlists ({{ Object.keys(playlists).length }})</p>
+      <ul class="space-y-2">
+        <li
+          v-for="(plist, index) in playlists"
+          :key="index"
+          :active="plist.id == playlist.id"
+          @click="setPlaylist(plist)"
+          class="p-3 rounded cursor-pointer border-white hover:border"
+          :class="[ plist.id == playlist.id ? 'bg-blue-600' : 'bg-gray-700']"
+        >
+          {{ plist.name }} ({{ plist.items.length }} songs)
         </li>
       </ul>
       <PromptDialog 
@@ -59,16 +72,21 @@
   
   <script setup>
   import PromptDialog from './PromptDialog.vue';
+  import MD5 from '../js/md5.js'
   </script>
   <script>
   
   export default {
     data() {
       return {
-        playlist: [],
+        playlist: {
+          items: [],
+        },
+        playlists: {},
         currentTrackIndex: 0,
         isPlaying: false,
         progress: 0,
+        currentPlaylist: '',
         currentTime: "0:00",
         duration: "0:00",
         dialog: false,
@@ -80,7 +98,7 @@
     ],
     computed: {
       currentTrack() {
-        return this.playlist[this.currentTrackIndex] || {};
+        return this.playlist.items[this.currentTrackIndex] || {};
       }
     },
     mounted: function() {
@@ -88,23 +106,43 @@
         const storedPlaylist = localStorage.getItem('playlist')
         if (storedPlaylist) {
           this.playlist = JSON.parse(storedPlaylist)
+          document.title = this.playlist.name
+        }
+        const storedPlaylists = localStorage.getItem('playlists')
+        if (storedPlaylists) {
+          this.playlists = JSON.parse(storedPlaylists)
         }    
     },
     methods: {
       loadPlaylistUrl(url){
         console.log(url)
+        const urlObj = new URL(url);
+        let name = urlObj.pathname.replace(/\/$/,'').split('/').pop() 
+        if (name) name = decodeURI(name)
         var link = this.parserUrl.replace('{url}',encodeURIComponent(url))
-        this.loadList(link)
+        this.loadList(link, name)
       },
-      loadList(url) {
+      loadList(url,name) {
         fetch(url)
           .then(r => r.json())
           .then(result => {
           if (result && result.items){
-            this.playlist = result.items
+            const urlObj = new URL(url);
+            result.name = name || result.name || 'Playlist from ' + urlObj.hostname
+            result.id = result.id || MD5(url)
+            this.playlist = result
+            this.currentPlaylist = result.name
             localStorage.setItem('playlist',JSON.stringify(this.playlist))
+            this.playlists[result.id] = this.playlist
+            localStorage.setItem('playlists',JSON.stringify(this.playlists))
+            document.title = result.name
           }
         })
+      },
+      setPlaylist(plist) {
+        this.currentTrackIndex = 0 
+        this.playlist = plist
+        document.title = plist.name
       },
       togglePlayPause() {
         const audio = this.$refs.audio;
@@ -158,12 +196,15 @@
         this.playTrack();
       },
       playTrack() {
+        console.log('play',this.currentTrack)
         this.$refs.audio.src = this.currentTrack.url;
         this.$refs.audio.onloadedmetadata = (e) => {
             this.$refs.audio.play();
             this.isPlaying = true;
+            document.title = this.currentTrack.name + ' - ' + this.playlist.name
             this.currentTrack.duration = this.$refs.audio.duration
             localStorage.setItem('playlist',JSON.stringify(this.playlist))
+            localStorage.setItem('playlists',JSON.stringify(this.playlists))
         }
         this.$refs.audio.onended = (e) => {
           this.nextTrack()
