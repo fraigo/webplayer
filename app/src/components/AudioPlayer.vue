@@ -120,20 +120,20 @@
           this.playlists = JSON.parse(storedPlaylists)
         }    
         try {
-          const url = document.location.hash ? document.location.hash.substring(1) : ''
-          const playlistURL = new URL(url)
-          console.log(playlistURL)
-          var plist = this.playlists.filter(p=>p.url==url)[0]
-          if (plist){
-            this.setPlaylist(plist)
-          } else {
-            this.loadPlaylistUrl(url)
-          }
+          this.loadHashUrl()
         } catch (e) {
+          console.log(e)
           document.location = '#'
           const storedPlaylist = localStorage.getItem('playlist')
           if (storedPlaylist) {
             this.setPlaylist(JSON.parse(storedPlaylist))
+          }
+        }
+        window.onhashchange = (e) => {
+          try {
+            this.loadHashUrl()
+          } catch(e){
+            console.log('hashchange',e)
           }
         }
     },
@@ -147,8 +147,20 @@
           this.toastMessage = ''
         })
       },
+      loadHashUrl() {
+        const url = document.location.hash ? document.location.hash.substring(1) : ''
+        const playlistURL = new URL(url)
+        console.log('hash url',playlistURL)
+        var plist = Object.values(this.playlists).filter(p=>p.url==url)[0]
+        if (plist){
+          console.log('plist',plist)
+          this.setPlaylist(plist)
+        } else {
+          this.loadPlaylistUrl(url)
+        }
+      },
       loadPlaylistUrl(url){
-        console.log(url)
+        console.log('load url',url)
         const urlObj = new URL(url);
         let name = urlObj.pathname.replace(/\/$/,'').split('/').pop() 
         if (name) name = decodeURI(name)
