@@ -1,14 +1,15 @@
 <template>
     <div class="max-w-lg mx-auto p-6 bg-gray-800 text-white rounded-lg shadow-lg">
       <div class="play-box bg-gray-800 sticky top-0 pt-2 pb-1">
-        <h1 class="mb-0 text-2xl font-semibold mb-4">{{ playlist.name || 'Audio Player'}}</h1>
+        <h1 class="mb-1 text-2xl font-semibold">{{ playlist.name || 'Audio Player'}}</h1>
         <div class="mb-2 flex justify-between">
           <div class="grow text-left"><small>{{ currentTrack ? currentTrack.name : ''}}</small></div>
           <div><small v-if="currentTime != '-'">{{ currentTime }} / </small> <small>{{ duration }}</small></div>
         </div>
-        <div class="mb-2">
-          <div class="w-full h-4 bg-gray-700 rounded-full overflow-hidden" 
+        <div class="mb-3">
+          <div class="progress-bar w-full h-4 bg-gray-700 rounded-full overflow-hidden" 
               ref="progress"
+              :class="[trackLoading ? 'track-loading' : '']"
               @click="seek($event)">
             <div
               class="h-full bg-blue-500 transition-all"
@@ -44,20 +45,21 @@
           :key="index"
           :active="currentTrackIndex === index"
           @click="selectTrack(index)"
-          class="p-3 rounded cursor-pointer border-white hover:border"
-          :class="[ currentTrackIndex === index ? 'bg-blue-600' : 'bg-gray-700']"
+          class="flex justify-between track-item p-3 rounded cursor-pointer border-white hover:border"
+          :class="[ currentTrackIndex === index ? 'bg-blue-600' : 'bg-gray-700', loadingTrack === index ? 'track-loading' : '']"
         >
-          {{ track.name }} ({{ formatTime(track.duration) }})
+          <div>{{ track.name }}</div>
+          <div>{{ formatTime(track.duration) }}</div>
         </li>
       </ul>
       <p v-if="Object.keys(playlists).length" class="my-2">Playlists ({{ Object.keys(playlists).length }})</p>
-      <ul class="space-y-2">
+      <ul class="flex pb-2" style="overflow-x: auto; gap: 0.5rem;">
         <li
           v-for="(plist, index) in playlists"
           :key="index"
           :active="plist.id == playlist.id"
           @click="setPlaylist(plist)"
-          class="p-3 rounded cursor-pointer border-white hover:border"
+          class="playlist-item p-3 rounded cursor-pointer border-white hover:border"
           :class="[ plist.id == playlist.id ? 'bg-blue-600' : 'bg-gray-700']"
         >
           {{ plist.name }} ({{ plist.items.length }} songs)
@@ -69,6 +71,9 @@
         :visible="dialog">
         Enter a URL to parse contents:
       </PromptDialog>
+      <transition name="fade" >
+        <div class="toast" v-if="toastMessage">{{ toastMessage }}</div>
+      </transition>
       <audio ref="audio" :src="currentTrack.url" @timeupdate="updateProgress" @loadedmetadata="updateDuration"></audio>
     </div>
   </template>
@@ -87,11 +92,15 @@
         },
         playlists: {},
         currentTrackIndex: 0,
+        trackLoading: false,
+        loadingTrack: -1,
         isPlaying: false,
         progress: 0,
         currentPlaylist: '',
         currentTime: "0:00",
         duration: "0:00",
+        toastMessage: '',
+        toastTimeout: null,
         dialog: false,
         parserUrl : 'https://franciscoigor.me/projects/playlist-generator/?url={url}',
       };
@@ -106,17 +115,38 @@
     },
     mounted: function() {
         window.content = this
-        const storedPlaylist = localStorage.getItem('playlist')
-        if (storedPlaylist) {
-          this.playlist = JSON.parse(storedPlaylist)
-          document.title = this.playlist.name
-        }
         const storedPlaylists = localStorage.getItem('playlists')
         if (storedPlaylists) {
           this.playlists = JSON.parse(storedPlaylists)
         }    
+        try {
+          const url = document.location.hash ? document.location.hash.substring(1) : ''
+          const playlistURL = new URL(url)
+          console.log(playlistURL)
+          var plist = this.playlists.filter(p=>p.url==url)[0]
+          if (plist){
+            this.setPlaylist(plist)
+          } else {
+            this.loadPlaylistUrl(url)
+          }
+        } catch (e) {
+          document.location = '#'
+          const storedPlaylist = localStorage.getItem('playlist')
+          if (storedPlaylist) {
+            this.setPlaylist(JSON.parse(storedPlaylist))
+          }
+        }
     },
     methods: {
+      toast(msg) {
+        if (this.toastTimeout){
+          clearTimeout(this.toastTimeout)
+        }
+        this.toastMessage = msg
+        this.toastTimeout = setTimeout(() => {
+          this.toastMessage = ''
+        })
+      },
       loadPlaylistUrl(url){
         console.log(url)
         const urlObj = new URL(url);
@@ -133,8 +163,7 @@
             const urlObj = new URL(url);
             result.name = name || result.name || 'Playlist from ' + urlObj.hostname
             result.id = result.id || MD5(url)
-            this.playlist = result
-            this.currentPlaylist = result.name
+            this.setPlaylist(result)
             localStorage.setItem('playlist',JSON.stringify(this.playlist))
             this.playlists[result.id] = this.playlist
             localStorage.setItem('playlists',JSON.stringify(this.playlists))
@@ -145,7 +174,12 @@
       setPlaylist(plist) {
         this.currentTrackIndex = 0 
         this.playlist = plist
+        this.currentPlaylist = plist.name
         document.title = plist.name
+        document.location = '#' + plist.url
+        this.$nextTick(() => {
+          window.scrollTo(0,0)
+        })
       },
       togglePlayPause() {
         const audio = this.$refs.audio;
@@ -200,8 +234,12 @@
       },
       playTrack() {
         console.log('play',this.currentTrack)
+        this.trackLoading = true
+        this.loadingTrack = this.currentTrackIndex
         this.$refs.audio.src = this.currentTrack.url;
         this.$refs.audio.onloadedmetadata = (e) => {
+            this.trackLoading = false
+            this.loadingTrack = -1
             this.$refs.audio.play();
             this.isPlaying = true;
             document.title = this.currentTrack.name + ' - ' + this.playlist.name
@@ -221,5 +259,27 @@
   </script>
   
   <style scoped>
-  /* Add any custom styles if necessary */
+  .fade-enter-active,
+  .fade-leave-active {
+    transition: opacity 0.3s ease, transform 0.3s ease;
+  }
+  
+  .fade-enter-from,
+  .fade-leave-to {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  .playlist-item{
+    width: 200px;
+    flex: 1 0 45%;
+  }
+  .track-item{
+    text-align: left;
+  }
+  .progress-bar.track-loading{
+    opacity: 0.6;
+  }
+  .track-item.track-loading{
+    opacity: 0.6;
+  }
   </style>
