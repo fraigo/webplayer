@@ -45,11 +45,14 @@
           :key="index"
           :active="currentTrackIndex === index"
           @click="selectTrack(index)"
-          class="flex justify-between track-item p-3 rounded cursor-pointer border-white hover:border"
+          class="flex gap-1 justify-between track-item p-3 rounded cursor-pointer border-white hover:border"
           :class="[ currentTrackIndex === index ? 'bg-blue-600' : 'bg-gray-700', loadingTrack === index ? 'track-loading' : '']"
         >
           <div>{{ track.name }}</div>
-          <div>{{ formatTime(track.duration) }}</div>
+          <div class="flex gap-1">
+            <div>{{ formatTime(track.duration) }}</div>
+            <div><a @click.stop="$event.target" :href="track.url" download target="_blank" ><img width="24" src="/assets/download.svg"></a></div>
+          </div>
         </li>
       </ul>
       <p v-if="Object.keys(playlists).length" class="my-2">Playlists ({{ Object.keys(playlists).length }})</p>
@@ -271,6 +274,10 @@
   </script>
   
   <style scoped>
+  .gap-1{
+    gap: 0.5rem;
+  }
+
   .fade-enter-active,
   .fade-leave-active {
     transition: opacity 0.3s ease, transform 0.3s ease;
