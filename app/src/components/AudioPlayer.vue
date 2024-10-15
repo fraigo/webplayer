@@ -1,5 +1,5 @@
 <template>
-    <div class="max-w-lg mx-auto p-6 bg-gray-800 text-white rounded-lg shadow-lg">
+    <div class="audio-player max-w-lg mx-auto p-6 bg-gray-800 text-white rounded-lg shadow-lg">
       <div class="play-box bg-gray-800 sticky top-0 pt-2 pb-1 z-10">
         <h1 class="mb-1 text-2xl font-semibold">{{ playlist.name || 'Audio Player'}}</h1>
         <div class="mb-2 flex justify-between">
@@ -329,6 +329,9 @@
   </script>
   
   <style scoped>
+  .audio-player{
+    min-height: 90vh;
+  }
   .gap-1{
     gap: 0.5rem;
   }
