@@ -1,6 +1,6 @@
 <template>
     <div class="max-w-lg mx-auto p-6 bg-gray-800 text-white rounded-lg shadow-lg">
-      <div class="play-box bg-gray-800 sticky top-0 pt-2 pb-1">
+      <div class="play-box bg-gray-800 sticky top-0 pt-2 pb-1 z-10">
         <h1 class="mb-1 text-2xl font-semibold">{{ playlist.name || 'Audio Player'}}</h1>
         <div class="mb-2 flex justify-between">
           <div class="grow text-left"><small>{{ currentTrack ? currentTrack.name : ''}}</small></div>
@@ -45,13 +45,19 @@
           :key="index"
           :active="currentTrackIndex === index"
           @click="selectTrack(index)"
-          class="flex gap-1 justify-between track-item p-3 rounded cursor-pointer border-white hover:border"
+          class="flex gap-1 justify-between items-center track-item p-3 rounded cursor-pointer border border-transparent hover:border-white"
           :class="[ currentTrackIndex === index ? 'bg-blue-600' : 'bg-gray-700', loadingTrack === index ? 'track-loading' : '']"
         >
           <div>{{ track.name }}</div>
-          <div class="flex gap-1">
+          <div class="flex gap-1 items-center">
             <div>{{ formatTime(track.duration) }}</div>
-            <div><a @click.stop="$event.target" :href="track.url" download target="_blank" ><img width="24" src="/assets/download.svg"></a></div>
+            
+            <div>
+              <Dropdown v-model="selectedMenu" :list="menuList" >
+                <div @click.stop="download(track.url,track.name)" class="flex justify-between hover:bg-blue-900">Download <a @click.stop="$event.target" :href="track.url" download target="_blank" ><img width="24" src="/assets/download.svg"></a></div>
+                <div @click.stop="removeTrack(index)" class="flex justify-between hover:bg-blue-900">Remove <img width="24" src="/assets/remove.svg"></div>
+              </Dropdown>
+            </div>
           </div>
         </li>
       </ul>
@@ -83,6 +89,7 @@
   
   <script setup>
   import PromptDialog from './PromptDialog.vue';
+  import Dropdown from './Dropdown.vue';
   import MD5 from '../js/md5.js'
   </script>
   <script>
@@ -106,10 +113,14 @@
         toastTimeout: null,
         dialog: false,
         parserUrl : 'https://franciscoigor.me/projects/playlist-generator/?url={url}',
+        selectedMenu: '',
+        menuList: [
+        ]
       };
     },
     components: [
-      PromptDialog
+      PromptDialog,
+      Dropdown
     ],
     computed: {
       currentTrack() {
@@ -150,6 +161,10 @@
           this.toastMessage = ''
         })
       },
+      removeTrack(index) {
+        this.playlist.items.splice(index,1)
+        this.savePlaylists()
+      },
       loadHashUrl() {
         const url = document.location.hash ? document.location.hash.substring(1) : ''
         const playlistURL = new URL(url)
@@ -179,12 +194,15 @@
             result.name = name || result.name || 'Playlist from ' + urlObj.hostname
             result.id = result.id || MD5(url)
             this.setPlaylist(result)
-            localStorage.setItem('playlist',JSON.stringify(this.playlist))
             this.playlists[result.id] = this.playlist
-            localStorage.setItem('playlists',JSON.stringify(this.playlists))
+            this.savePlaylists()
             document.title = result.name
           }
         })
+      },
+      savePlaylists() {
+        localStorage.setItem('playlist',JSON.stringify(this.playlist))
+        localStorage.setItem('playlists',JSON.stringify(this.playlists))
       },
       setPlaylist(plist) {
         this.currentTrackIndex = 0 
@@ -209,6 +227,10 @@
       },
       updateProgress() {
         const audio = this.$refs.audio;
+        if (!audio.duration) {
+          this.progress = 0;
+          this.currentTime = '-';  
+        }
         this.progress = (audio.currentTime / audio.duration) * 100;
         this.currentTime = this.formatTime(audio.currentTime);
       },
@@ -218,6 +240,7 @@
       },
       formatTime(seconds) {
         if (!seconds) return '-'
+        if (isNaN(seconds)) return ''
         const minutes = Math.floor(seconds / 60);
         const secs = Math.floor(seconds % 60);
         return `${minutes}:${secs < 10 ? "0" : ""}${secs}`;
