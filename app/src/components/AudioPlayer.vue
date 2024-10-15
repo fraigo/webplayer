@@ -1,7 +1,7 @@
 <template>
     <div class="audio-player max-w-lg mx-auto p-6 bg-gray-800 text-white rounded-lg shadow-lg">
       <div class="play-box bg-gray-800 sticky top-0 pt-2 pb-1 z-10">
-        <h1 class="mb-1 text-2xl font-semibold">{{ playlist.name || 'Audio Player'}}</h1>
+        <h1 class="mb-1 text-2xl font-semibold cursor-pointer" @click="titleDialog=true">{{ playlist.name || 'Audio Player'}}</h1>
         <div class="mb-2 flex justify-between">
           <div class="grow text-left"><small>{{ currentTrack ? currentTrack.name : ''}}</small></div>
           <div><small v-if="currentTime != '-'">{{ currentTime }} / </small> <small>{{ duration }}</small></div>
@@ -44,16 +44,16 @@
           v-for="(track, index) in playlist.items"
           :key="index"
           :active="currentTrackIndex === index"
-          class="flex gap-1 justify-between items-center track-item p-3 rounded cursor-pointer border border-transparent hover:border-white"
+          class="flex gap-1 justify-between items-center track-item py-2 px-3 rounded border border-transparent hover:border-white"
           :class="[ currentTrackIndex === index ? 'bg-blue-600' : 'bg-gray-700', loadingTrack === index ? 'track-loading' : '']"
         >
-          <div @click="selectTrack(index)" >{{ track.name }}</div>
+          <div class="cursor-pointer w-full" @click="selectTrack(index)" >{{ track.name }}</div>
           <div class="flex gap-1 items-center">
             <div @click="selectTrack(index)" >{{ formatTime(track.duration) }}</div>
-            
             <div>
               <Dropdown v-model="selectedMenu" :list="menuList" >
                 <div @click.stop="download(track.url,track.name)" class="flex justify-between hover:bg-blue-900">Download <a @click.stop="$event.target" :href="track.url" download target="_blank" ><img width="24" src="/assets/download.svg"></a></div>
+                <div @click.stop="editedSong=track" class="flex justify-between hover:bg-blue-900">Rename <img width="24" src="/assets/edit.svg"></div>
                 <div @click.stop="removeTrack(index)" class="flex justify-between hover:bg-blue-900">Remove <img width="24" src="/assets/remove.svg"></div>
               </Dropdown>
             </div>
@@ -87,6 +87,20 @@
         :visible="dialog">
         Enter a URL to parse contents:
       </PromptDialog>
+      <PromptDialog 
+        @close="titleDialog=false"
+        @change="savePlaylists"
+        v-model="playlist.name"
+        :visible="titleDialog">
+        Enter the new playlist title:
+      </PromptDialog>
+      <PromptDialog 
+        @close="editedSong=''"
+        @change="savePlaylists"
+        v-model="editedSong.name"
+        :visible="editedSong!=''">
+        Enter the new song title:
+      </PromptDialog>
       <transition name="fade" >
         <div class="toast" v-if="toastMessage"><div>{{ toastMessage }}</div></div>
       </transition>
@@ -119,6 +133,8 @@
         toastMessage: '',
         toastTimeout: null,
         dialog: false,
+        titleDialog: false,
+        editedSong: '',
         parserUrl : 'https://franciscoigor.me/projects/playlist-generator/?url={url}',
         selectedMenu: '',
         menuList: [
@@ -290,6 +306,10 @@
         }
       },
       selectTrack(index) {
+        if (this.currentTrackIndex == index){
+          this.togglePlayPause()
+          return
+        }
         this.currentTrackIndex = index;
         this.isPlaying = false;
         this.playTrack();
@@ -299,7 +319,7 @@
         this.loadingTrack = this.currentTrackIndex
         this.$refs.audio.src = this.currentTrack.url;
         console.log('play',this.$refs.audio.src)
-        this.toast('Load '+this.currentTrack.name)
+        this.toast('Loading '+this.currentTrack.name)
         this.$refs.audio.onerror = (e) => {
           this.toast('Error:'+e.message)
         }

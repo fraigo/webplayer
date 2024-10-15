@@ -8,6 +8,7 @@
             type="text"
             class="w-full px-4 py-2 border rounded-lg mb-4"
             placeholder="Type here..."
+            ref="textinput"
           />
           <div class="flex justify-end space-x-2">
             <button
@@ -29,8 +30,12 @@
   </template>
   
   <script>
+
   export default {
     props: {
+      modelValue: {
+        type: String,
+      },
       visible: {
         type: Boolean,
         default: false,
@@ -41,9 +46,13 @@
         inputValue: "",
       };
     },
+    mounted() {
+      this.inputValue = this.modelValue
+    },
     methods: {
       handleButtonClick() {
         this.$emit("change", this.inputValue);
+        this.$emit("update:modelValue", this.inputValue);
         this.inputValue = ""; // Optionally clear the input
         this.handleClose();
       },
@@ -52,9 +61,16 @@
       },
     },
     watch: {
-      visible(newValue) {
-        
+      modelValue(newValue) {
+        this.inputValue = newValue
       },
+      visible(newValue) {
+        if (newValue) {
+          this.$nextTick(()=>{
+            this.$refs.textinput.focus()
+          })
+        }
+      }
     }
   };
   </script>
