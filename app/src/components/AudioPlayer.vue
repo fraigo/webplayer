@@ -300,10 +300,14 @@
         this.$refs.audio.onloadedmetadata = (e) => {
             this.trackLoading = false
             this.loadingTrack = -1
-            this.$refs.audio.play();
-            this.isPlaying = true;
             document.title = this.currentTrack.name + ' - ' + this.playlist.name
             this.currentTrack.duration = this.$refs.audio.duration
+            if (!isFinite(this.$refs.audio.duration)){
+              this.currentTrack.duration = 0
+              this.toast('Failed to load '+this.currentTrack.name)
+            }
+            this.$refs.audio.play();
+            this.isPlaying = true;
             localStorage.setItem('playlist',JSON.stringify(this.playlist))
             localStorage.setItem('playlists',JSON.stringify(this.playlists))
         }
