@@ -61,17 +61,18 @@
         </li>
       </ul>
       <p v-if="Object.keys(playlists).length" class="my-2">Playlists ({{ Object.keys(playlists).length }})</p>
-      <ul class="flex pb-2" style="overflow-x: auto; gap: 0.5rem;">
+      <ul class="flex pb-3" style="overflow-x: auto; gap: 0.5rem;">
         <li
           v-for="(plist, index) in playlists"
           :key="index"
+          :id="index"
           :active="plist.id == playlist.id"
           @click="setPlaylist(plist)"
           class="playlist-item p-3 flex justify-between rounded cursor-pointer border-white hover:border"
           :class="[ plist.id == playlist.id ? 'bg-blue-600' : 'bg-gray-700']"
         >
-          <div>
-          {{ plist.name }} ({{ plist.items.length }} songs)
+          <div class="text-left text-sm">
+          {{ plist.name }} <div class="inline-block">({{ plist.items.length }} songs)</div>
           </div>
           <div>
             <Dropdown v-model="selectedMenu" :list="menuList" >
@@ -140,7 +141,6 @@
           this.playlists = JSON.parse(storedPlaylists)
         }    
         try {
-          this.toast('Loading URL')
           this.loadHashUrl()
         } catch (e) {
           console.log(e)
@@ -204,9 +204,11 @@
         this.loadList(link, name)
       },
       loadList(url,name) {
+        this.toast('Loading URL '+name)
         fetch(url)
           .then(r => r.json())
           .then(result => {
+          this.toast('')
           if (result && result.items){
             const urlObj = new URL(url);
             result.name = name || result.name || 'Playlist from ' + urlObj.hostname
@@ -229,6 +231,10 @@
         document.title = plist.name
         document.location = '#' + plist.url
         this.$nextTick(() => {
+          if (plist.id){
+            var e = document.getElementById(plist.id)
+            if (e) e.scrollIntoView()
+          }
           window.scrollTo(0,0)
         })
       },
