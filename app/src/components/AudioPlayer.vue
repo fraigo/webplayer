@@ -68,10 +68,17 @@
           :key="index"
           :active="plist.id == playlist.id"
           @click="setPlaylist(plist)"
-          class="playlist-item p-3 rounded cursor-pointer border-white hover:border"
+          class="playlist-item p-3 flex justify-between rounded cursor-pointer border-white hover:border"
           :class="[ plist.id == playlist.id ? 'bg-blue-600' : 'bg-gray-700']"
         >
+          <div>
           {{ plist.name }} ({{ plist.items.length }} songs)
+          </div>
+          <div>
+            <Dropdown v-model="selectedMenu" :list="menuList" >
+              <div @click.stop="removePlaylist(index)" class="flex justify-between hover:bg-blue-900">Remove <img width="24" src="/assets/remove.svg"></div>
+            </Dropdown>
+          </div>
         </li>
       </ul>
       <PromptDialog 
@@ -163,6 +170,16 @@
       },
       removeTrack(index) {
         this.playlist.items.splice(index,1)
+        this.savePlaylists()
+      },
+      removePlaylist(index) {
+        if (this.playlist.name == this.playlists[index].name){
+          this.playlist = {
+            name: 'Playlist Removed',
+            items: []
+          }
+        }
+        delete this.playlists[index]
         this.savePlaylists()
       },
       loadHashUrl() {
