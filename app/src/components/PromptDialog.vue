@@ -1,6 +1,6 @@
 <template>
     <transition name="fade" >
-      <div v-if="visible" class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center">
+      <div v-if="visible" class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center z-20">
         <div class="bg-gray-900 m-2 p-6 rounded-lg shadow-lg w-96 transform transition-transform duration-300" :class="{'scale-100': visible, 'scale-90': !visible}">
           <p class="text-lg font-medium mb-4"><slot>Test</slot></p>
           <input
