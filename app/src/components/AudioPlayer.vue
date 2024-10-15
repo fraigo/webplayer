@@ -291,7 +291,7 @@
         console.log('play',this.currentTrack)
         this.trackLoading = true
         this.loadingTrack = this.currentTrackIndex
-        this.$refs.audio.src = this.currentTrack.url;
+        this.$refs.audio.src = this.currentTrack.url.replace('http:','https:');
         this.$refs.audio.onloadedmetadata = (e) => {
             this.trackLoading = false
             this.loadingTrack = -1
