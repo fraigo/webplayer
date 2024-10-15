@@ -167,7 +167,7 @@
         this.toastMessage = msg
         this.toastTimeout = setTimeout(() => {
           this.toastMessage = ''
-        },25000)
+        },5000)
       },
       removeTrack(index) {
         this.playlist.items.splice(index,1)
@@ -291,10 +291,11 @@
       playTrack() {
         this.trackLoading = true
         this.loadingTrack = this.currentTrackIndex
-        this.$refs.audio.src = this.currentTrack.url.replace('http:','https:');
+        this.$refs.audio.src = this.currentTrack.url;
         console.log('play',this.$refs.audio.src)
+        this.toast('Load '+this.currentTrack.name)
         this.$refs.audio.onerror = (e) => {
-          this.toast(e.message)
+          this.toast('Error:'+e.message)
         }
         this.$refs.audio.onloadedmetadata = (e) => {
             this.trackLoading = false
