@@ -44,13 +44,12 @@
           v-for="(track, index) in playlist.items"
           :key="index"
           :active="currentTrackIndex === index"
-          @click="selectTrack(index)"
           class="flex gap-1 justify-between items-center track-item p-3 rounded cursor-pointer border border-transparent hover:border-white"
           :class="[ currentTrackIndex === index ? 'bg-blue-600' : 'bg-gray-700', loadingTrack === index ? 'track-loading' : '']"
         >
-          <div>{{ track.name }}</div>
+          <div @click="selectTrack(index)" >{{ track.name }}</div>
           <div class="flex gap-1 items-center">
-            <div>{{ formatTime(track.duration) }}</div>
+            <div @click="selectTrack(index)" >{{ formatTime(track.duration) }}</div>
             
             <div>
               <Dropdown v-model="selectedMenu" :list="menuList" >
@@ -88,7 +87,7 @@
         Enter a URL to parse contents:
       </PromptDialog>
       <transition name="fade" >
-        <div class="toast" v-if="toastMessage">{{ toastMessage }}</div>
+        <div class="toast" v-if="toastMessage"><div>{{ toastMessage }}</div></div>
       </transition>
       <audio ref="audio" :src="currentTrack.url" @timeupdate="updateProgress" @loadedmetadata="updateDuration"></audio>
     </div>
@@ -141,6 +140,7 @@
           this.playlists = JSON.parse(storedPlaylists)
         }    
         try {
+          this.toast('Loading URL')
           this.loadHashUrl()
         } catch (e) {
           console.log(e)
@@ -160,13 +160,14 @@
     },
     methods: {
       toast(msg) {
+        console.log('toast',msg)
         if (this.toastTimeout){
           clearTimeout(this.toastTimeout)
         }
         this.toastMessage = msg
         this.toastTimeout = setTimeout(() => {
           this.toastMessage = ''
-        })
+        },25000)
       },
       removeTrack(index) {
         this.playlist.items.splice(index,1)
@@ -288,10 +289,13 @@
         this.playTrack();
       },
       playTrack() {
-        console.log('play',this.currentTrack)
         this.trackLoading = true
         this.loadingTrack = this.currentTrackIndex
         this.$refs.audio.src = this.currentTrack.url.replace('http:','https:');
+        console.log('play',this.$refs.audio.src)
+        this.$refs.audio.onerror = (e) => {
+          this.toast(e.message)
+        }
         this.$refs.audio.onloadedmetadata = (e) => {
             this.trackLoading = false
             this.loadingTrack = -1
@@ -340,5 +344,21 @@
   }
   .track-item.track-loading{
     opacity: 0.6;
+  }
+  .toast{
+    position: fixed; 
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    padding: 1rem;
+    box-sizing: border-box;
+  }
+  .toast > div{
+    border-radius: 1rem;
+    background-color: rgba(0,0,0,0.6);
+    color: #fff;
+    max-width: 400px;
+    margin: 0 auto;
+    padding: 0.5rem 1rem;
   }
   </style>
