@@ -330,7 +330,7 @@
   
   <style scoped>
   .audio-player{
-    min-height: 90vh;
+    min-height: 80vh;
   }
   .gap-1{
     gap: 0.5rem;

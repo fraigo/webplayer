@@ -10,8 +10,7 @@
       </div>
   
       <!-- Dropdown menu -->
-      <div v-if="isOpen" class="dropdown-options text-white origin-top-right absolute right-0 mt-0 rounded-md shadow-lg bg-blue-700 ring-1 ring-black ring-opacity-5 focus:outline-none z-10" role="menu">
-        <div class="dropdown-back"></div>
+      <div v-if="isOpen" class="dropdown-options text-white origin-top-right absolute right-0 mt-0 rounded-md shadow-lg bg-blue-700 ring-1 ring-black ring-opacity-5 focus:outline-none z-20" role="menu">
         <div
             v-for="(item, index) in list"
             :key="index"
@@ -77,13 +76,17 @@
   }
   .dropdown-options > div{
     padding: 0.75rem 1rem;
+    z-index: 20;
+    position: relative;
   }
-  .dropdown-back{
+  .dropdown-options::after{
+    content: '';
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100vh;
     background-color: rgba(0,0,0,0.2);
+    z-index: 10;
   }
   </style>
