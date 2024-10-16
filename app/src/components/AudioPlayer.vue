@@ -52,9 +52,10 @@
             <div @click="selectTrack(index)" >{{ formatTime(track.duration) }}</div>
             <div>
               <Dropdown v-model="selectedMenu" :list="menuList" >
-                <div @click.stop="download(track.url,track.name)" class="flex justify-between hover:bg-blue-900">Download <a @click.stop="$event.target" :href="track.url" download target="_blank" ><img width="24" src="/assets/download.svg"></a></div>
-                <div @click.stop="editedSong=track" class="flex justify-between hover:bg-blue-900">Rename <img width="24" src="/assets/edit.svg"></div>
-                <div @click.stop="removeTrack(index)" class="flex justify-between hover:bg-blue-900">Remove <img width="24" src="/assets/remove.svg"></div>
+                <div @click="download(track.url,track.name)" class="flex justify-between hover:bg-blue-900">Download <a @click.stop="$event.target" :href="track.url" download target="_blank" ><img width="24" src="/assets/download.svg"></a></div>
+                <div @click="editedSong=track" class="flex justify-between hover:bg-blue-900">Rename <img width="24" src="/assets/edit.svg"></div>
+                <div @click="fav(index)" class="flex justify-between hover:bg-blue-900">Favorites <img width="24" src="/assets/star.svg"></div>
+                <div @click="removeTrack(index)" class="flex justify-between hover:bg-blue-900">Remove <img width="24" src="/assets/remove.svg"></div>
               </Dropdown>
             </div>
           </div>
@@ -197,6 +198,25 @@
           }
         }
         delete this.playlists[index]
+        this.savePlaylists()
+      },
+      fav (index) {
+        var id = MD5('fav')
+        if (!this.playlists[id]){
+          var playlists = {}
+          playlists[id] = {
+            id: id,
+            url: 'fav',
+            name : 'Favorites',
+            items : []
+          }
+          for(var idx in this.playlists){
+            playlists[idx] = this.playlists[idx]
+          }
+          this.playlists = playlists
+        }
+        var song = this.playlist.items[index]
+        this.playlists[id].items.push(song)
         this.savePlaylists()
       },
       loadHashUrl() {
